@@ -1,7 +1,3 @@
-import { AssetDto } from './dto/assets.dto';
-import { Injectable } from '@nestjs/common';
-import { NetworkConfig } from 'src/utils/networkConfig';
-import { promises as fs } from 'fs';
 import * as grpc from '@grpc/grpc-js';
 import {
   Contract,
@@ -11,8 +7,12 @@ import {
   connect,
   signers,
 } from '@hyperledger/fabric-gateway';
-import * as path from 'path';
+import { Injectable } from '@nestjs/common';
 import * as crypto from 'crypto';
+import { promises as fs } from 'fs';
+import * as path from 'path';
+import { NetworkConfig } from 'src/utils/networkConfig';
+import { AssetDto } from './dto/assets.dto';
 
 @Injectable()
 export class NetworkService {
@@ -112,8 +112,6 @@ export class NetworkService {
     const resultJson = this.utf8Decoder.decode(resultBytes);
     const result = JSON.parse(resultJson);
 
-    console.log('*** Result:', result);
-
     return result;
   }
 
@@ -138,5 +136,21 @@ export class NetworkService {
     );
 
     console.log('*** Transaction committed successfully');
+  }
+
+  async readAssetByID(contract: Contract, assetId: string): Promise<any> {
+    console.log(
+      '\n--> Evaluate Transaction: ReadAsset, function returns asset attributes',
+    );
+
+    const resultBytes = await contract.evaluateTransaction(
+      'ReadAsset',
+      assetId,
+    );
+
+    const resultJson = this.utf8Decoder.decode(resultBytes);
+    const result = JSON.parse(resultJson);
+
+    return result;
   }
 }
