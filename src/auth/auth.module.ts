@@ -7,9 +7,11 @@ import { jwtConstants } from './constants';
 import { LocalStrategy } from './strategy/local.strategy';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './strategy/jwt.strategy';
+import { NetworkModule } from 'src/network/network.module';
 
 @Module({
   imports: [
+    NetworkModule,
     PassportModule,
     UsersModule,
     JwtModule.register({

@@ -11,16 +11,14 @@ import { Injectable } from '@nestjs/common';
 import * as crypto from 'crypto';
 import { promises as fs } from 'fs';
 import * as path from 'path';
-import { NetworkConfig } from 'src/utils/networkConfig';
 import { AssetDto } from './dto/assets.dto';
+import { NetworkConfigService } from 'src/network-config/network-config.service';
 
 @Injectable()
 export class NetworkService {
-  private networkConfig: NetworkConfig;
   private utf8Decoder: TextDecoder;
 
-  constructor() {
-    this.networkConfig = new NetworkConfig();
+  constructor(private networkConfigService: NetworkConfigService) {
     this.utf8Decoder = new TextDecoder();
   }
 
@@ -50,35 +48,51 @@ export class NetworkService {
     return { client, gateway };
   }
 
-  async displayInputParameters(): Promise<void> {
-    console.log(`channelName:       ${this.networkConfig.channelName}`);
-    console.log(`chaincodeName:     ${this.networkConfig.chaincodeName}`);
-    console.log(`mspId:             ${this.networkConfig.mspId}`);
-    console.log(`cryptoPath:        ${this.networkConfig.cryptoPath}`);
-    console.log(`keyDirectoryPath:  ${this.networkConfig.keyDirectoryPath}`);
-    console.log(`certPath:          ${this.networkConfig.certPath}`);
-    console.log(`tlsCertPath:       ${this.networkConfig.tlsCertPath}`);
-    console.log(`peerEndpoint:      ${this.networkConfig.peerEndpoint}`);
-    console.log(`peerHostAlias:     ${this.networkConfig.peerHostAlias}`);
+  public async displayInputParameters(): Promise<void> {
+    console.log(`channelName:       ${this.networkConfigService.channelName}`);
+    console.log(
+      `chaincodeName:     ${this.networkConfigService.chaincodeName}`,
+    );
+    console.log(`mspId:             ${this.networkConfigService.mspId}`);
+    console.log(`cryptoPath:        ${this.networkConfigService.cryptoPath}`);
+    console.log(
+      `keyDirectoryPath:  ${this.networkConfigService.keyDirectoryPath}`,
+    );
+    console.log(`certPath:          ${this.networkConfigService.certPath}`);
+    console.log(`tlsCertPath:       ${this.networkConfigService.tlsCertPath}`);
+    console.log(`peerEndpoint:      ${this.networkConfigService.peerEndpoint}`);
+    console.log(
+      `peerHostAlias:     ${this.networkConfigService.peerHostAlias}`,
+    );
   }
 
   private async newGrpcConnection() {
-    const tlsRootCert = await fs.readFile(this.networkConfig.tlsCertPath);
+    const tlsRootCert = await fs.readFile(
+      this.networkConfigService.tlsCertPath,
+    );
     const tlsCredentials = grpc.credentials.createSsl(tlsRootCert);
-    return new grpc.Client(this.networkConfig.peerEndpoint, tlsCredentials, {
-      'grpc.ssl_target_name_override': this.networkConfig.peerHostAlias,
-    });
+    return new grpc.Client(
+      this.networkConfigService.peerEndpoint,
+      tlsCredentials,
+      {
+        'grpc.ssl_target_name_override':
+          this.networkConfigService.peerHostAlias,
+      },
+    );
   }
 
   private async newIdentity(): Promise<Identity> {
-    const credentials = await fs.readFile(this.networkConfig.certPath);
+    const credentials = await fs.readFile(this.networkConfigService.certPath);
 
-    return { mspId: this.networkConfig.mspId, credentials };
+    return { mspId: this.networkConfigService.mspId, credentials };
   }
 
   private async newSigner(): Promise<Signer> {
-    const files = await fs.readdir(this.networkConfig.keyDirectoryPath);
-    const keyPath = path.resolve(this.networkConfig.keyDirectoryPath, files[0]);
+    const files = await fs.readdir(this.networkConfigService.keyDirectoryPath);
+    const keyPath = path.resolve(
+      this.networkConfigService.keyDirectoryPath,
+      files[0],
+    );
     const privateKeyPem = await fs.readFile(keyPath);
     const privateKey = crypto.createPrivateKey(privateKeyPem);
 

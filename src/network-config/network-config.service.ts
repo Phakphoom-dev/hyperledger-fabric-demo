@@ -1,10 +1,11 @@
-import { envOrDefault } from './helper';
+import { Injectable } from '@nestjs/common';
+import { envOrDefault } from 'src/utils/helper';
 import * as grpc from '@grpc/grpc-js';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 
-export class NetworkConfig {
-  private static instance: NetworkConfig;
+@Injectable()
+export class NetworkConfigService {
   public cryptoPath: string;
   public channelName: string;
   public chaincodeName: string;
@@ -74,14 +75,6 @@ export class NetworkConfig {
         'cert.pem',
       ),
     );
-  }
-
-  public static getInstance(): NetworkConfig {
-    if (!NetworkConfig.instance) {
-      NetworkConfig.instance = new NetworkConfig();
-    }
-
-    return NetworkConfig.instance;
   }
 
   public async newGrpcConnection(): Promise<grpc.Client> {
