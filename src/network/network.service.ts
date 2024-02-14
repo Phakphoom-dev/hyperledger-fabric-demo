@@ -2,17 +2,15 @@ import * as grpc from '@grpc/grpc-js';
 import {
   Contract,
   Gateway,
-  Identity,
-  Signer,
   connect,
   signers,
 } from '@hyperledger/fabric-gateway';
-import { Injectable } from '@nestjs/common';
-import * as crypto from 'crypto';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { Wallets, X509Identity } from 'fabric-network';
 import { promises as fs } from 'fs';
-import * as path from 'path';
-import { AssetDto } from './dto/assets.dto';
 import { NetworkConfigService } from 'src/network-config/network-config.service';
+import { AssetDto } from './dto/assets.dto';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class NetworkService {
@@ -22,14 +20,16 @@ export class NetworkService {
     this.utf8Decoder = new TextDecoder();
   }
 
-  async connectNetwork(): Promise<{ gateway: Gateway; client: grpc.Client }> {
+  async connectNetwork(
+    user: any,
+  ): Promise<{ gateway: Gateway; client: grpc.Client }> {
     // The gRPC client connection should be shared by all Gateway connections to this endpoint.
     const client: grpc.Client = await this.newGrpcConnection();
 
     const gateway: Gateway = await connect({
       client,
-      identity: await this.newIdentity(),
-      signer: await this.newSigner(),
+      identity: await this.newIdentity(user),
+      signer: await this.newSigner(user),
       // Default timeouts for different gRPC calls
       evaluateOptions: () => {
         return { deadline: Date.now() + 5000 }; // 5 seconds
@@ -64,6 +64,7 @@ export class NetworkService {
     console.log(
       `peerHostAlias:     ${this.networkConfigService.peerHostAlias}`,
     );
+    console.log(`walletPath:     ${this.networkConfigService.walletPath}`);
   }
 
   private async newGrpcConnection() {
@@ -81,20 +82,39 @@ export class NetworkService {
     );
   }
 
-  private async newIdentity(): Promise<Identity> {
-    const credentials = await fs.readFile(this.networkConfigService.certPath);
+  private async newIdentity(user: any): Promise<any> {
+    const wallet = await Wallets.newFileSystemWallet(
+      this.networkConfigService.walletPath,
+    );
 
-    return { mspId: this.networkConfigService.mspId, credentials };
+    const userIdentity = await wallet.get(user.username);
+
+    if (!userIdentity) {
+      throw new NotFoundException('User Identity not found');
+    }
+
+    const certificate = (userIdentity as X509Identity).credentials.certificate;
+
+    return {
+      mspId: userIdentity.mspId,
+      credentials: new TextEncoder().encode(certificate),
+    };
   }
 
-  private async newSigner(): Promise<Signer> {
-    const files = await fs.readdir(this.networkConfigService.keyDirectoryPath);
-    const keyPath = path.resolve(
-      this.networkConfigService.keyDirectoryPath,
-      files[0],
+  private async newSigner(user: any): Promise<any> {
+    const wallet = await Wallets.newFileSystemWallet(
+      this.networkConfigService.walletPath,
     );
-    const privateKeyPem = await fs.readFile(keyPath);
-    const privateKey = crypto.createPrivateKey(privateKeyPem);
+
+    const userIdentity = await wallet.get(user.username);
+
+    if (!userIdentity) {
+      throw new NotFoundException('User Identity not found');
+    }
+
+    const privateKey = crypto.createPrivateKey(
+      (userIdentity as X509Identity).credentials.privateKey,
+    );
 
     return signers.newPrivateKeySigner(privateKey);
   }

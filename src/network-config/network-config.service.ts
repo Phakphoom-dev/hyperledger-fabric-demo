@@ -15,6 +15,7 @@ export class NetworkConfigService {
   public peerHostAlias: string;
   public keyDirectoryPath: string;
   public certPath: string;
+  public walletPath: string;
 
   constructor() {
     this.channelName = envOrDefault('CHANNEL_NAME', 'mychannel');
@@ -74,6 +75,11 @@ export class NetworkConfigService {
         'signcerts',
         'cert.pem',
       ),
+    );
+
+    this.walletPath = envOrDefault(
+      'CRYPTO_PATH',
+      path.resolve(__dirname, '..', '..', 'wallets'),
     );
   }
 

@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Get,
   HttpCode,
@@ -10,14 +11,11 @@ import {
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guard/local-auth.guard';
 import { JwtAuthGuard } from './guard/jwt-auth.guard';
-import { NetworkService } from 'src/network/network.service';
+import { RegisterDto } from './dto/register.dto';
 
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private authService: AuthService,
-    private networkService: NetworkService,
-  ) {}
+  constructor(private authService: AuthService) {}
 
   @UseGuards(LocalAuthGuard)
   @HttpCode(HttpStatus.OK)
@@ -33,7 +31,9 @@ export class AuthController {
   }
 
   @Post('register')
-  register(@Request() req) {
-    return this.authService.login(req.user);
+  async register(@Body() registerDto: RegisterDto) {
+    await this.authService.register(registerDto);
+
+    return { message: 'Register user success' };
   }
 }

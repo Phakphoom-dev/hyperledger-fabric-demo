@@ -12,6 +12,7 @@ import { AssetDto } from './dto/assets.dto';
 import { NetworkService } from './network.service';
 import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard';
 import { NetworkConfigService } from 'src/network-config/network-config.service';
+import { GetUser } from 'src/decorator/get-user.decorator';
 
 @UseGuards(JwtAuthGuard)
 @Controller('networks')
@@ -22,10 +23,10 @@ export class NetworkController {
   ) {}
 
   @Post('init-ledger')
-  async initLedger() {
+  async initLedger(@GetUser() user) {
     await this.networkService.displayInputParameters();
 
-    const { client, gateway } = await this.networkService.connectNetwork();
+    const { client, gateway } = await this.networkService.connectNetwork(user);
 
     try {
       // Get a network instance representing the channel where the smart contract is deployed.
@@ -46,10 +47,10 @@ export class NetworkController {
   }
 
   @Get('all-assets')
-  async getAllAssets() {
+  async getAllAssets(@GetUser() user) {
     await this.networkService.displayInputParameters();
 
-    const { client, gateway } = await this.networkService.connectNetwork();
+    const { client, gateway } = await this.networkService.connectNetwork(user);
 
     try {
       // Get a network instance representing the channel where the smart contract is deployed.
@@ -72,10 +73,10 @@ export class NetworkController {
   }
 
   @Get('read-asset/:id')
-  async readAssetByID(@Param('id') assetId: string) {
+  async readAssetByID(@Param('id') assetId: string, @GetUser() user) {
     await this.networkService.displayInputParameters();
 
-    const { client, gateway } = await this.networkService.connectNetwork();
+    const { client, gateway } = await this.networkService.connectNetwork(user);
 
     try {
       // Get a network instance representing the channel where the smart contract is deployed.
@@ -96,10 +97,10 @@ export class NetworkController {
   }
 
   @Post('create-asset')
-  async createAsset(@Body() assetDto: AssetDto) {
+  async createAsset(@Body() assetDto: AssetDto, @GetUser() user) {
     await this.networkService.displayInputParameters();
 
-    const { client, gateway } = await this.networkService.connectNetwork();
+    const { client, gateway } = await this.networkService.connectNetwork(user);
 
     try {
       // Get a network instance representing the channel where the smart contract is deployed.
