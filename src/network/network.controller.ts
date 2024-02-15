@@ -1,8 +1,8 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
-  HttpException,
   HttpStatus,
   Param,
   Post,
@@ -39,7 +39,7 @@ export class NetworkController {
 
       await this.networkService.initLedger(contract);
     } catch (e) {
-      console.log('🚀 ~ NetworkController ~ initLedger ~ e:', e);
+      throw new BadRequestException(e);
     } finally {
       gateway.close();
       client.close();
@@ -65,7 +65,7 @@ export class NetworkController {
 
       return { total: assets.length, data: assets };
     } catch (e) {
-      console.log('🚀 ~ NetworkController ~ getAllAssets ~ e:', e);
+      throw new BadRequestException(e.details);
     } finally {
       gateway.close();
       client.close();
@@ -89,7 +89,7 @@ export class NetworkController {
 
       return await this.networkService.readAssetByID(contract, assetId);
     } catch (e) {
-      throw new HttpException('Asset Not Found', HttpStatus.NOT_FOUND);
+      throw new BadRequestException(e.details);
     } finally {
       gateway.close();
       client.close();
@@ -118,7 +118,7 @@ export class NetworkController {
         status: HttpStatus.CREATED,
       };
     } catch (e) {
-      console.log('🚀 ~ NetworkController ~ getAllAssets ~ e:', e);
+      throw new BadRequestException(e.details);
     } finally {
       gateway.close();
       client.close();
